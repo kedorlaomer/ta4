@@ -15,7 +15,7 @@ def readSentences(f):
     for l in f.xreadlines():
         line = l.strip()
         contents = line.split("\t")
-        if len(contents) == 2:
+        if len(contents) != 2:
             if len(accu) > 0:
                 yield accu
                 accu = []
