@@ -74,8 +74,9 @@ class Features(object):
 
     def featuresForWord(self, word):
         return {
-            'first_letter': word[0],
-            'last_letter': word[-1],
-            'last_upper': word[-1].isupper(),
-            'all_upper': word.isupper(),
+            # 'first_letter': word[0],
+            # 'last_letter': word[-1],
+            # 'last_upper': word[-1].isupper(),
+            'tagged': nltk.pos_tag([word])[0][1],
+            # 'all_upper': word.isupper(),
         }
