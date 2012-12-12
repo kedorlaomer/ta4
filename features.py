@@ -20,7 +20,7 @@ class Features(object):
     # Returns a list of dictionaries, one for each token in sentence (which should
     # be a list of strings). The keys are names of features, the values are bools
     def featuresForSentence(self, sentence):
-        rv = range(len(sentence))
+        rv = dict()
         tagged = nltk.pos_tag(sentence)
         # Großbuchstabe nicht am Anfang
         p1 = re.compile(r'([\w]+|[\W]+)[A-Z]')
@@ -71,3 +71,11 @@ class Features(object):
             rv[i] = d
 
         return rv
+
+    def featuresForWord(self, word):
+        return {
+            'first_letter': word[0],
+            'last_letter': word[-1],
+            'last_upper': word[-1].isupper(),
+            'all_upper': word.isupper(),
+        }
