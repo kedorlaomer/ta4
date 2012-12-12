@@ -27,7 +27,7 @@ def readSentences(f):
 def getUniqueTokens(filename):
     with open(filename) as f:
         return list(set([
-            line.strip().lower() for line in f.xreadlines()
+            line.strip() for line in f.xreadlines()
         ]))
 
 
