@@ -2,9 +2,7 @@
 # encoding: utf-8
 
 import re
-
 import nltk
-
 from helpers import suffixes, prefixes, isNominalTag, isVerbalTag
 
 
