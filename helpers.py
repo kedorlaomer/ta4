@@ -28,3 +28,24 @@ def isNominalTag(tag):
 # which tags denote verbs?
 def isVerbalTag(tag):
     return tag in ["VBG", "VBN", "VBD", "VBP", "VBZ"]
+
+
+# normalisiere sehr brutal: bis auf Buchstaben ist alles gleich;
+# Ziffern sind alle gleich; Groß- und Kleinschreibung wird
+# entfernt
+def extremelyNormalizeChar(char, digit_char="0", else_char="@"):
+    char = char.lower()
+
+    if char.isalpha():
+        return char
+
+    if char.isdigit():
+        return digit_char
+
+    return else_char
+
+
+# wie extremelyNormalizeChar, nur dass alle Zeichen eines
+# Wortes derartig behandelt werden
+def extremelyNormalize(token):
+    return ''.join(map(extremelyNormalizeChar, token))

@@ -40,8 +40,8 @@ def train(train_set_filename):
     featuresets = []
     features = Features(stopwords, geneNames)
 
+    tokenCount = 0
     with open(train_set_filename) as f:
-        tokenCount = 0
         for line in f.xreadlines():
             line = line.strip()
             contents = line.split("\t")
@@ -51,7 +51,7 @@ def train(train_set_filename):
                     features.featuresForWord(token), classification,
                 ))
 
-            if tokenCount % 1000 == 0:
+            if tokenCount % 25000 == 0:
                 print tokenCount
             tokenCount += 1
 
@@ -61,21 +61,30 @@ def train(train_set_filename):
     train_set_size = int(tokenCount * 0.67)
     train_set = featuresets[:train_set_size]
     test_set = featuresets[train_set_size:]
+    dev_set = featuresets[int(train_set_size * 0.99):train_set_size]
 
     print len(train_set)
     print len(test_set)
+    print len(dev_set)
 
     classifier = NaiveBayesClassifier.train(train_set)
     print "Trained"
     print nltk_classify.accuracy(classifier, test_set)
-    print classifier.show_most_informative_features(10)
+    # print classifier.show_most_informative_features(20)
+
+    # --------------------------dev
+    print nltk_classify.accuracy(classifier, dev_set), "<- Dev"
+    errors = []
+    for (feature, tag) in dev_set:
+        guess = classifier.classify(feature)
+        if guess != tag:
+            errors.append((tag, guess, feature))
+    for (tag, guess, feature) in sorted(errors):
+        print 'correct=%-8s guess=%-8s feature=%-30s' % (tag, guess, feature)
+    # --------------------------dev
 
 
 def classify(classify_set_file):
-    pass
-
-
-def solution():
     pass
 
 

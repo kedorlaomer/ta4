@@ -5,17 +5,39 @@ import re
 
 import nltk
 
-from helpers import suffixes, prefixes, isNominalTag, isVerbalTag
+from helpers import (
+    suffixes, prefixes, isNominalTag, isVerbalTag, extremelyNormalize,
+)
 
 
 # A class for extracting features from sentences.
 class Features(object):
     _stopwords = None
     _geneNames = None
+    _genesDict = None
 
     def __init__(self, stopwords, geneNames):
-        self._stopwords = stopwords
-        self._geneNames = geneNames
+        self._stopwords = set(stopwords)
+        self._geneNames = set(geneNames)
+        self._initGenesDict()
+
+    def _initGenesDict(self):
+        self._genesDict = {}
+        for gene in self._geneNames:
+            gene += "\n"
+            curr_gene = ""
+            firstFound = False
+            for c in gene:
+                if c != "\n":
+                    curr_gene += c
+                if not c.isalnum():
+                    if firstFound:
+                        classification = "I-protein"
+                    else:
+                        classification = "B-protein"
+                        firstFound = True
+                    self._genesDict[curr_gene] = classification
+                    curr_gene = ""
 
     # Returns a list of dictionaries, one for each token in sentence (which should
     # be a list of strings). The keys are names of features, the values are bools
@@ -73,10 +95,34 @@ class Features(object):
         return rv
 
     def featuresForWord(self, word):
-        return {
-            # 'first_letter': word[0],
-            # 'last_letter': word[-1],
-            # 'last_upper': word[-1].isupper(),
-            'tagged': nltk.pos_tag([word])[0][1],
-            # 'all_upper': word.isupper(),
-        }
+        if not word:
+            return {}
+
+        rv = {}
+        word_len = len(word)
+
+        if word_len == 1:
+            rv['suffix-1'] = word
+        elif word_len == 2:
+            rv['prefix-1'] = word[:1]
+        elif word_len in [3, 4]:
+            rv['suffix-2'] = word[-2:]
+            rv['prefix-2'] = word[:2]
+        else:
+            rv['suffix-3'] = word[-3:]
+            rv['prefix-3'] = word[:3]
+            rv['last_upper'] = word[-1].isupper()
+            rv['contains_digit'] = bool(re.search(r"\d", word))
+            rv['contains_upper'] = bool(re.search(r"[A-Z]", word[1:]))
+            # rv['is_alpha'] = word.isalpha()
+            # rv['is_digit'] = word.isdigit()
+            # rv['all_upper'] = word.upper() == word
+            # rv['all_lower'] = word.lower() == word
+
+        rv['is_gen'] = word in self._geneNames
+        rv['is_gen2'] = self._genesDict[word] if word in self._genesDict else ''
+        # rv['stopword'] = word in self._stopwords
+        # rv['norm_gen'] = extremelyNormalize(word) in self._normGens
+        # rv['pos_tag'] = nltk.pos_tag(word)
+
+        return rv
