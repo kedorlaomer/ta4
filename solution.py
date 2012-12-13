@@ -5,7 +5,7 @@ import sys
 
 from helpers import stripClassifications
 from features import Features
-
+from random import shuffle
 
 # reads an IOB file and „yield“s every sentence as a list of
 # pairs (token, classification)
@@ -21,6 +21,24 @@ def readSentences(f):
         else:
             token, classification = contents
             accu.append((token, classification))
+
+def makeCrossValidationFiles(f):
+    sentences = readSentences(f)
+    aux = []
+    for i in sentences:
+        aux.append(i)
+    sentences = aux
+    shuffle(sentences)
+
+    for i in range(5):
+        if i == 4:
+            test = sentences[i*(len(sentences)/5):len(sentences)]
+        else : 
+            test = sentences[i*(len(sentences)/5):(i+1)*(len(sentences)/5)]
+ 
+        train = sentences[0 : i*(len(sentences)/5)] + sentences[(i+1)*(len(sentences)/5):len(sentences)] 
+        yield (train,test)
+    
 
 
 def getUniqueTokens(filename):
@@ -56,12 +74,16 @@ def readForTraining(f, featureExtractor, verbose=False):
 def solution():
     stopwords = getUniqueTokens("english_stop_words.txt")
     geneNames = getUniqueTokens("genenames-2.txt")
-
     features = Features(stopwords, geneNames)
     with open("goldstandard2.iob") as f:
         data = readForTraining(f, features, verbose=True)
         return data
+        # crossValFile = makeCrossValidationFiles(f)
+        # for x in crossValFile:
+        #     print type(x)
+        #     print x[0][0]
+        #     break
 
 if __name__ == '__main__':
     pass
-    # solution()
+    solution()
