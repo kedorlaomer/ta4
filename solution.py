@@ -30,13 +30,29 @@ def makeCrossValidationFiles(f):
     sentences = aux
     shuffle(sentences)
 
+    print len(sentences)
     for i in range(5):
+        inter0 = i*(len(sentences)/5)
+        inter1 = (i+1)*(len(sentences)/5)
+
         if i == 4:
+            # print "begin of test "+str(i*(len(sentences)/5))
+            # print "end of test "+str(len(sentences))
+            # print "train from "+str(0)+" to "+str(i*(len(sentences)/5))
             test = sentences[i*(len(sentences)/5):len(sentences)]
-        else : 
+            train = sentences[0 : i*(len(sentences)/5)]
+        elif i==0:
+            # print "begin of test "+str(i*(len(sentences)/5))
+            # print "end of test "+str((i+1)*(len(sentences)/5))
+            # print "train from "+str((i+1)*(len(sentences)/5))+" to "+str(len(sentences))
             test = sentences[i*(len(sentences)/5):(i+1)*(len(sentences)/5)]
- 
-        train = sentences[0 : i*(len(sentences)/5)] + sentences[(i+1)*(len(sentences)/5):len(sentences)] 
+            train = sentences[(i+1)*(len(sentences)/5):len(sentences)]   
+        else : 
+            # print "begin of test "+str(i*(len(sentences)/5))
+            # print "end of test "+str((i+1)*(len(sentences)/5))
+            # print "train from "+str(0)+" to "+str(i*(len(sentences)/5))+" and from "+str((i+1)*(len(sentences)/5))+" to "+str(len(sentences))
+            test = sentences[i*(len(sentences)/5):(i+1)*(len(sentences)/5)]
+            train = sentences[0 : i*(len(sentences)/5)] + sentences[(i+1)*(len(sentences)/5):len(sentences)] 
         yield (train,test)
     
 
