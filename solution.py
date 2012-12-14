@@ -5,7 +5,7 @@ import sys
 
 from helpers import stripClassifications,writeCorpus
 from features import Features
-from random import shuffle
+from random import shuffle, random
 
 # reads an IOB file and „yield“s every sentence as a list of
 # pairs (token, classification)
@@ -22,6 +22,8 @@ def readSentences(f):
             token, classification = contents
             accu.append((token, classification))
 
+# „yields“ 5 pairs of (training, test) where ⅕ of the data are
+# randomly chosen to be test-Data
 def makeCrossValidationFiles(f):
     sentences = readSentences(f)
     aux = []
@@ -48,11 +50,10 @@ def getUniqueTokens(filename):
         ]))
 
 
-# Returns a list of (featureSet, label) pairs from file f using
-# featureExtractor to find the featureSet. If verbose, then we
+# „yields“ (featureSet, label) pairs from file f using
+# featureExtractor to find the featureSet. If verbose, then
 # print a progress bar.
 def readForTraining(f, featureExtractor, verbose=False):
-    rv = []
     i = 0
     for sentence in readSentences(f):
         # sentence contains classifications which the feature extractor
@@ -60,27 +61,33 @@ def readForTraining(f, featureExtractor, verbose=False):
         featureSet = featureExtractor.featuresForSentence(stripClassifications(sentence))
         # but the result should contain them as second element
         pair = zip(featureSet, map(lambda x: x[1], sentence))
-        rv += pair
         i += 1
 
         if verbose:
             if i & 2047 == 0: print "*"
-            elif i & 63 == 0: print ":"
+            elif i & 63 == 0: print ""
             else: sys.stdout.write('.')
             sys.stdout.flush()
-    return rv
+        yield pair
 
+# partitions the list l = [l_1, …, l_n] into a pair (l1, l2),
+# where approximately n*epsilon of the l_i end up in l1 and the
+# rest in l2
+def partitionList(l, epsilon):
+    (rv1, rv2) = ([], [])
+    for x in l:
+        (rv1 if random() < epsilon else rv2).append(x)
+
+    return (rv1, rv2)
 
 def solution():
-    # stopwords = getUniqueTokens("english_stop_words.txt")
-    # geneNames = getUniqueTokens("genenames-2.txt")
-    # features = Features(stopwords, geneNames)
+    stopwords = getUniqueTokens("english_stop_words.txt")
+    geneNames = getUniqueTokens("genenames-2.txt")
+    features = Features(stopwords, geneNames)
     with open("goldstandard2.iob") as f:
-    #     data = readForTraining(f, features, verbose=True)
-    #     return data
-        crossValFile = makeCrossValidationFiles(f)
-        writeCorpus(crossValFile)
+        data = readForTraining(f, features, verbose=True)
+       #crossValFile = makeCrossValidationFiles(f)
+       #writeCorpus(crossValFile)
 
 if __name__ == '__main__':
-    pass
     solution()
