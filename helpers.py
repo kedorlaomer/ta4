@@ -28,3 +28,18 @@ def isNominalTag(tag):
 # which tags denote verbs?
 def isVerbalTag(tag):
     return tag in ["VBG", "VBN", "VBD", "VBP", "VBZ"]
+
+def writeCorpus(l):
+	for i in enumerate(l):
+		trainF = open('train'+str(i[0]),'w')
+		testF = open('test'+str(i[0]),'w')
+		for line in i[1][0]:
+			for pair in line:
+				trainF.write(pair[0]+'\t'+pair[1]+'\n')
+			trainF.write('\n')
+		for line in i[1][1]:
+			for pair in line:
+				testF.write(pair[0]+'\t'+pair[1]+'\n')
+			testF.write('\n')
+		trainF.close()
+		testF.close()

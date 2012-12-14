@@ -3,7 +3,7 @@
 
 import sys
 
-from helpers import stripClassifications
+from helpers import stripClassifications,writeCorpus
 from features import Features
 from random import shuffle
 
@@ -72,17 +72,14 @@ def readForTraining(f, featureExtractor, verbose=False):
 
 
 def solution():
-    stopwords = getUniqueTokens("english_stop_words.txt")
-    geneNames = getUniqueTokens("genenames-2.txt")
-    features = Features(stopwords, geneNames)
+    # stopwords = getUniqueTokens("english_stop_words.txt")
+    # geneNames = getUniqueTokens("genenames-2.txt")
+    # features = Features(stopwords, geneNames)
     with open("goldstandard2.iob") as f:
-        data = readForTraining(f, features, verbose=True)
-        return data
-        # crossValFile = makeCrossValidationFiles(f)
-        # for x in crossValFile:
-        #     print type(x)
-        #     print x[0][0]
-        #     break
+    #     data = readForTraining(f, features, verbose=True)
+    #     return data
+        crossValFile = makeCrossValidationFiles(f)
+        writeCorpus(crossValFile)
 
 if __name__ == '__main__':
     pass
