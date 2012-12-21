@@ -38,21 +38,12 @@ def makeCrossValidationFiles(f):
         inter1 = (i+1)*(len(sentences)/5)
 
         if i == 4:
-            # print "begin of test "+str(i*(len(sentences)/5))
-            # print "end of test "+str(len(sentences))
-            # print "train from "+str(0)+" to "+str(i*(len(sentences)/5))
             test = sentences[i*(len(sentences)/5):len(sentences)]
             train = sentences[0 : i*(len(sentences)/5)]
         elif i==0:
-            # print "begin of test "+str(i*(len(sentences)/5))
-            # print "end of test "+str((i+1)*(len(sentences)/5))
-            # print "train from "+str((i+1)*(len(sentences)/5))+" to "+str(len(sentences))
             test = sentences[i*(len(sentences)/5):(i+1)*(len(sentences)/5)]
             train = sentences[(i+1)*(len(sentences)/5):len(sentences)]   
         else : 
-            # print "begin of test "+str(i*(len(sentences)/5))
-            # print "end of test "+str((i+1)*(len(sentences)/5))
-            # print "train from "+str(0)+" to "+str(i*(len(sentences)/5))+" and from "+str((i+1)*(len(sentences)/5))+" to "+str(len(sentences))
             test = sentences[i*(len(sentences)/5):(i+1)*(len(sentences)/5)]
             train = sentences[0 : i*(len(sentences)/5)] + sentences[(i+1)*(len(sentences)/5):len(sentences)] 
         yield (train,test)
@@ -96,14 +87,44 @@ def partitionList(l, epsilon):
 
     return (rv1, rv2)
 
+def betweenProteins(sentence,position):
+    if position > 0 and position < len(sentence):
+        return (sentence[position-1][1]!= 'O' and sentence[position+1][1]!= 'O')
+    elif position == 0:
+        return sentence[position+1][1] != 'O'
+    else: 
+        return sentence[position-1][1] != 'O'
+
+# post processes a file f, fixing IOB format and 
+# binding two proteins separated by a token if the token is not a stopword ¿or a verb?
+def postProcessing(f,stopwords):
+    for sentence in readSentences(f):
+        for (pos,(token,tag)) in enumerate(sentence):
+            if tag != 'O':
+                if pos > 0:
+                    if (sentence[pos-1][1] != 'O'):
+                        sentence[1] = 'I-Protein'
+                else:
+                    #if it is the first occurrence of a protein put the B-Protein tag
+                    sentence[1] = 'B-Protein'
+                if token in stopwords:
+                    print 'wrong tag -> stopword and protein'
+                    sentence[1] = 'O'
+            else: 
+                if token not in stopwords and betweenProteins(sentence,pos):
+                    print 'wrong tag?? -> between two proteins and not a stopword'
+                    sentence[1] = 'I-Protein'
+        yield sentence
+
+
 def solution():
     stopwords = getUniqueTokens("english_stop_words.txt")
     geneNames = getUniqueTokens("genenames-2.txt")
     features = Features(stopwords, geneNames)
     with open("goldstandard2.iob") as f:
         data = readForTraining(f, features, verbose=True)
-       #crossValFile = makeCrossValidationFiles(f)
-       #writeCorpus(crossValFile)
+        #crossValFile = makeCrossValidationFiles(f)
+        #writeCorpus(crossValFile)
 
 if __name__ == '__main__':
     solution()
