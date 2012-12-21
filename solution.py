@@ -3,7 +3,8 @@
 
 import sys
 
-from helpers import stripClassifications,writeCorpus
+from nltk import pos_tag
+from helpers import stripClassifications,writeCorpus,isNominalTag,isVerbalTag
 from features import Features
 from random import shuffle, random
 
@@ -95,26 +96,31 @@ def betweenProteins(sentence,position):
     else: 
         return sentence[position-1][1] != 'O'
 
+
 # post processes a file f, fixing IOB format and 
 # binding two proteins separated by a token if the token is not a stopword ¿or a verb?
 def postProcessing(f,stopwords):
     for sentence in readSentences(f):
-        for (pos,(token,tag)) in enumerate(sentence):
+        posTag = [y[1] for y in pos_tag([x[0] for x in sentence])]
+        for (position,(token,tag)) in enumerate(sentence):
             if tag != 'O':
-                if pos > 0:
-                    if (sentence[pos-1][1] != 'O'):
-                        sentence[1] = 'I-Protein'
+                if position > 0:
+                    if (sentence[position-1][1] != 'O'):
+                        sentence[position][1] = 'I-Protein'
+                    else:
+                        sentence[position][1] = 'B-Protein'
                 else:
                     #if it is the first occurrence of a protein put the B-Protein tag
-                    sentence[1] = 'B-Protein'
+                    sentence[position][1] = 'B-Protein'
                 if token in stopwords:
                     print 'wrong tag -> stopword and protein'
-                    sentence[1] = 'O'
+                    sentence[position][1] = 'O'
             else: 
-                if token not in stopwords and betweenProteins(sentence,pos):
+                if token not in stopwords and isNominal(posTag[position]) and betweenProteins(sentence,position):
                     print 'wrong tag?? -> between two proteins and not a stopword'
-                    sentence[1] = 'I-Protein'
+                    sentence[position][1] = 'I-Protein'
         yield sentence
+
 
 def writeSentences(sentences,f):
     for sentence in sentences:
