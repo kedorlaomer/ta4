@@ -116,6 +116,11 @@ def postProcessing(f,stopwords):
                     sentence[1] = 'I-Protein'
         yield sentence
 
+def writeSentences(sentences,f):
+    for sentence in sentences:
+        for line in sentence:
+            f.write(line[0]+'\t'+line[1])
+        f.write('\n')
 
 def solution():
     stopwords = getUniqueTokens("english_stop_words.txt")
