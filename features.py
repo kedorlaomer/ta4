@@ -15,9 +15,15 @@ class Features(object):
         self._stopwords = stopwords
         self._geneNames = geneNames
 
-    # Returns a list of dictionaries, one for each token in sentence (which should
-    # be a list of strings). The keys are names of features, the values are bools
-    def featuresForSentence(self, sentence):
+    # Returns a list of dictionaries, one for each token in sentence (which
+    # should be a list of strings). The keys are names of features, the values
+    # are bools. If i s given, only sentence[j] is considered.
+    def featuresForSentence(self, sentence, j=-1):
+        if j != -1:
+            low = max(j-1, 0)
+            high = min(j+1, len(sentence))
+            sentence = sentence[low:high+1]
+
         rv = range(len(sentence))
         tagged = nltk.pos_tag(sentence)
         # Großbuchstabe nicht am Anfang
@@ -68,4 +74,12 @@ class Features(object):
 
             rv[i] = d
 
-        return rv
+        if j == -1:
+            return rv
+        elif j == 0: # first word is a special case
+            return [rv[0]]
+        else:
+            return [rv[1]]
+
+    def featuresForWord(self, word):
+        return self.featuresForSentence([word])[0]

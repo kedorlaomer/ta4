@@ -4,12 +4,14 @@
 import sys
 
 from nltk import pos_tag
+from nltk.classify import ConditionalExponentialClassifier
 from helpers import stripClassifications,writeCorpus,isNominalTag,isVerbalTag
 from features import Features
 from random import shuffle, random
 
 # reads an IOB file and „yield“s every sentence as a list of
-# pairs (token, classification)
+# pairs (token, classification), where all „I“-type
+# classifications are changed to „B“ (which is easy to revert)
 def readSentences(f):
     accu = []
     for l in f.xreadlines():
@@ -21,6 +23,8 @@ def readSentences(f):
                 accu = []
         else:
             token, classification = contents
+            if classification[0] == 'I':
+                    classification = 'B' + classification[1:]
             accu.append((token, classification))
 
 # „yields“ 5 pairs of (training, test) where ⅕ of the data are
@@ -78,16 +82,6 @@ def readForTraining(f, featureExtractor, verbose=False):
             sys.stdout.flush()
         yield pair
 
-# partitions the list l = [l_1, …, l_n] into a pair (l1, l2),
-# where approximately n*epsilon of the l_i end up in l1 and the
-# rest in l2
-def partitionList(l, epsilon):
-    (rv1, rv2) = ([], [])
-    for x in l:
-        (rv1 if random() < epsilon else rv2).append(x)
-
-    return (rv1, rv2)
-
 def betweenProteins(sentence,position):
     if position > 0 and position < len(sentence):
         return (sentence[position-1][1]!= 'O' and sentence[position+1][1]!= 'O')
@@ -97,8 +91,9 @@ def betweenProteins(sentence,position):
         return sentence[position-1][1] != 'O'
 
 
-# post processes a file f, fixing IOB format and 
-# binding two proteins separated by a token if the token is not a stopword ¿or a verb?
+# post processes a file f, fixing IOB format and binding two
+# proteins separated by a token if the token is not a stopword
+# or a verb
 def postProcessing(f,stopwords):
     for sentence in readSentences(f):
         posTag = [y[1] for y in pos_tag([x[0] for x in sentence])]
@@ -128,14 +123,28 @@ def writeSentences(sentences,f):
             f.write(line[0]+'\t'+line[1])
         f.write('\n')
 
+# format of data: list as returned by readForTraining
+def trainConditionalExponentialClassifier(data):   
+    data = [x for y in data for x in y]
+    classi = ConditionalExponentialClassifier.train(data,
+        algorithm='IIS', max_iter=3)
+    return classi
+
+def testClassifier(classifier, features, data):
+    data = [features.featuresForWord(token) for token in data]
+    return [classifier.classify(featureset) for featureset in data]
+
 def solution():
     stopwords = getUniqueTokens("english_stop_words.txt")
     geneNames = getUniqueTokens("genenames-2.txt")
     features = Features(stopwords, geneNames)
-    with open("goldstandard2.iob") as f:
+    with open("train0") as f:
         data = readForTraining(f, features, verbose=True)
+        classi = trainConditionalExponentialClassifier([x for x in data])
+        return classi
         #crossValFile = makeCrossValidationFiles(f)
         #writeCorpus(crossValFile)
 
 if __name__ == '__main__':
-    solution()
+    global classi
+    classi = solution()
