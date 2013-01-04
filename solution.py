@@ -27,6 +27,9 @@ def readSentences(f):
                     classification = 'B' + classification[1:]
             accu.append((token, classification))
 
+    if len(accu) > 0: # final sentence
+        yield accu
+
 # „yields“ 5 pairs of (training, test) where ⅕ of the data are
 # randomly chosen to be test-Data
 def makeCrossValidationFiles(f):
@@ -91,29 +94,30 @@ def betweenProteins(sentence,position):
         return sentence[position-1][1] != 'O'
 
 
-# post processes a file f, fixing IOB format and binding two
-# proteins separated by a token if the token is not a stopword
-# or a verb
-def postProcessing(f,stopwords):
-    for sentence in readSentences(f):
-        posTag = [y[1] for y in pos_tag([x[0] for x in sentence])]
+# a list of sentences, binding two proteins separated by a token
+# if the token is not a stopword or a verb
+def postProcessing(sentences,stopwords):
+    for sentence in sentences:
+        posTag = [y[1] for y in pos_tag(stripClassifications(sentence))]
         for (position,(token,tag)) in enumerate(sentence):
             if tag != 'O':
                 if position > 0:
                     if (sentence[position-1][1] != 'O'):
-                        sentence[position][1] = 'I-Protein'
+                        tag = 'I-protein'
                     else:
-                        sentence[position][1] = 'B-Protein'
+                        tag = 'B-protein'
                 else:
                     #if it is the first occurrence of a protein put the B-Protein tag
-                    sentence[position][1] = 'B-Protein'
+                    tag = 'B-protein'
                 if token in stopwords:
                     print 'wrong tag -> stopword and protein'
-                    sentence[position][1] = 'O'
+                    tag = 'O'
             else: 
-                if token not in stopwords and isNominal(posTag[position]) and betweenProteins(sentence,position):
+                if token not in stopwords and isNominalTag(posTag[position]) and betweenProteins(sentence,position):
                     print 'wrong tag?? -> between two proteins and not a stopword'
-                    sentence[position][1] = 'I-Protein'
+                    tag = 'I-protein'
+
+            sentence[position] = (token, tag)
         yield sentence
 
 
@@ -131,20 +135,26 @@ def trainConditionalExponentialClassifier(data):
     return classi
 
 def testClassifier(classifier, features, data):
-    data = [features.featuresForWord(token) for token in data]
-    return [classifier.classify(featureset) for featureset in data]
+    allFeatures = [features.featuresForWord(token) for token in data]
+    classifications = [classifier.classify(featureset)
+        for featureset in allFeatures]
+    data = zip(data, classifications)
+    return [x for x in postProcessing([data], stopwords)][0]
 
 def solution():
+    global stopwords
     stopwords = getUniqueTokens("english_stop_words.txt")
     geneNames = getUniqueTokens("genenames-2.txt")
     features = Features(stopwords, geneNames)
     with open("train0") as f:
         data = readForTraining(f, features, verbose=True)
         classi = trainConditionalExponentialClassifier([x for x in data])
-        return classi
+        with open("test0") as f2:
+            data = [y for x in readSentences(f2) for y in x]
+            data = testClassifier(classi, features, stripClassifications(data))
+            writeIOB(data, "eval0")
         #crossValFile = makeCrossValidationFiles(f)
         #writeCorpus(crossValFile)
 
 if __name__ == '__main__':
-    global classi
-    classi = solution()
+    classi, data = solution()

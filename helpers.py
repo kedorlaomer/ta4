@@ -43,3 +43,10 @@ def writeCorpus(l):
 			testF.write('\n')
 		trainF.close()
 		testF.close()
+
+# data is a list of (token, classification) pairs; it's saved to
+# the open file f
+def writeIOB(data, filename):
+    with open(filename, "w") as f:
+        for (token, classification) in data:
+            f.write("%s\t%s\n" % (token, classification))
