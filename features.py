@@ -10,10 +10,15 @@ from helpers import suffixes, prefixes, isNominalTag, isVerbalTag
 class Features(object):
     _stopwords = None
     _geneNames = None
+    _classifier = None
 
-    def __init__(self, stopwords, geneNames):
+    # If the function classifier is not None, its classification
+    # is used under the name "*classifier*". It is supposed to
+    # process a hash of features and return a bool.
+    def __init__(self, stopwords, geneNames, classifier=None):
         self._stopwords = stopwords
         self._geneNames = geneNames
+        self._classifier = classifier
 
     # Returns a list of dictionaries, one for each token in sentence (which
     # should be a list of strings). The keys are names of features, the values
@@ -23,6 +28,8 @@ class Features(object):
             low = max(j-1, 0)
             high = min(j+1, len(sentence))
             sentence = sentence[low:high+1]
+
+        classifier = self._classifier
 
         rv = range(len(sentence))
         tagged = nltk.pos_tag(sentence)
@@ -43,6 +50,9 @@ class Features(object):
             # prefixes
             for p in prefixes(token):
                 d[p] = True
+
+            d["is stopword"] = token in self._stopwords
+            d["is gene name"] = token in self._geneNames
 
             # its own POS tag
             d["nominal"] = isNominalTag(tag)
@@ -71,6 +81,14 @@ class Features(object):
             d["capital in word"] = p1.match(token) is not None
             d["special characters"] = p2.match(token) is not None
             d["contains digit"] = p3.match(token) is not None
+
+            l = len(token)
+            lo = l - l % 3
+            hi = lo + 3
+            d["length is in [%d-%d[" % (lo, hi)] = True
+
+            if classifier is not None:
+                d["*classifier*"] = classifier(token)
 
             rv[i] = d
 

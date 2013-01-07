@@ -5,7 +5,7 @@ import sys
 
 from nltk import pos_tag
 from nltk.classify import ConditionalExponentialClassifier
-from helpers import stripClassifications,writeCorpus,isNominalTag,isVerbalTag
+from helpers import stripClassifications, writeCorpus, isNominalTag, isVerbalTag, writeIOB
 from features import Features
 from random import shuffle, random
 
@@ -110,11 +110,9 @@ def postProcessing(sentences,stopwords):
                     #if it is the first occurrence of a protein put the B-Protein tag
                     tag = 'B-protein'
                 if token in stopwords:
-                    print 'wrong tag -> stopword and protein'
                     tag = 'O'
             else: 
                 if token not in stopwords and isNominalTag(posTag[position]) and betweenProteins(sentence,position):
-                    print 'wrong tag?? -> between two proteins and not a stopword'
                     tag = 'I-protein'
 
             sentence[position] = (token, tag)
@@ -149,10 +147,15 @@ def solution():
     with open("train0") as f:
         data = readForTraining(f, features, verbose=True)
         classi = trainConditionalExponentialClassifier([x for x in data])
+        wrapper = lambda f: classi.classify(f) != 'O'
+        features = Features(stopwords, geneNames, wrapper)
+# trainiere HMI/CRF/?? mit train0 (oder einer anderen Datei?)
+# und teste mit test0 wie angegeben…
         with open("test0") as f2:
             data = [y for x in readSentences(f2) for y in x]
             data = testClassifier(classi, features, stripClassifications(data))
             writeIOB(data, "eval0")
+            return classi, data
         #crossValFile = makeCrossValidationFiles(f)
         #writeCorpus(crossValFile)
 
