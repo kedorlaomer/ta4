@@ -139,6 +139,7 @@ def testClassifier(classifier, features, data):
     data = zip(data, classifications)
     return [x for x in postProcessing([data], stopwords)][0]
 
+
 def solution():
     global stopwords
     stopwords = getUniqueTokens("english_stop_words.txt")
@@ -146,7 +147,7 @@ def solution():
     features = Features(stopwords, geneNames)
     with open("train0") as f:
         data = readForTraining(f, features, verbose=True)
-        classi = trainConditionalExponentialClassifier([x for x in data])
+        classi = trainConditionalExponentialClassifier(list(data))
         wrapper = lambda f: classi.classify(f) != 'O'
         features = Features(stopwords, geneNames, wrapper)
 # trainiere HMI/CRF/?? mit train0 (oder einer anderen Datei?)
